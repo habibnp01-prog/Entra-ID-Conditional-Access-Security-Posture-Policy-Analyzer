@@ -13,7 +13,6 @@ function Connect-EntraCAGraph {
         throw "Certificate $CertificateThumbprint is missing, expired, or has no private key."
     }
 
-    # Disconnect any existing session to avoid state bleed
     $existing = Get-MgContext -ErrorAction SilentlyContinue
     if ($existing) {
         Write-Host "[..] Disconnecting existing Graph session." -ForegroundColor DarkCyan
@@ -50,5 +49,18 @@ function Disconnect-EntraCAGraph {
         Write-Host "[OK] Disconnected from Microsoft Graph." -ForegroundColor Green
     } catch {
         Write-Host "[WARN] Disconnect reported: $_" -ForegroundColor Yellow
+    }
+}
+
+function Test-EntraCAGraphConnection {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
+    try {
+        $ctx = Get-MgContext -ErrorAction Stop
+        return ($null -ne $ctx -and $null -ne $ctx.TenantId)
+    } catch {
+        return $false
     }
 }
