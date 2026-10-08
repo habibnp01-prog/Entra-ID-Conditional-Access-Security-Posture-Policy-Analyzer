@@ -7,3 +7,9 @@ Logs/**
 *.pem
 .vscode/
 _bootstrap.ps1
+# Real tenant config (do NOT commit)
+Config/AnalyzerConfig.json
+
+# Real certificate public key
+EntraCA-Analyzer.cer
+

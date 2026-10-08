@@ -2,16 +2,17 @@ function Invoke-EntraCAPolicyEnforcementAnalysis {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory)] [object[]]$Policies
+        [AllowEmptyCollection()] [object[]]$Policies = @()
     )
 
     Write-Host "[..] Analyzing policy enforcement state..." -ForegroundColor DarkCyan
     $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-    $total       = $Policies.Count
-    $enabled     = ($Policies | Where-Object { $_.State -eq "enabled" }).Count
-    $reportOnly  = ($Policies | Where-Object { $_.State -eq "enabledForReportingButNotEnforced" }).Count
-    $disabled    = ($Policies | Where-Object { $_.State -eq "disabled" }).Count
+    $policies = @($Policies)
+    $total      = $policies.Count
+    $enabled    = @($policies | Where-Object { $_.State -eq "enabled" }).Count
+    $reportOnly = @($policies | Where-Object { $_.State -eq "enabledForReportingButNotEnforced" }).Count
+    $disabled   = @($policies | Where-Object { $_.State -eq "disabled" }).Count
 
     if ($total -eq 0) {
         $findings.Add([PSCustomObject]@{ FindingId = "CA-007"; Severity = "Critical"; PolicyId = $null; PolicyName = $null; SubjectId = $null; SubjectType = "Tenant"; Details = "Tenant has ZERO Conditional Access policies defined." })

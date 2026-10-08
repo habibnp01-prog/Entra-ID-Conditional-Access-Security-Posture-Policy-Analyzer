@@ -2,19 +2,19 @@ function Invoke-EntraCALegacyAuthAnalysis {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory)] [object[]]$Policies
+        [AllowEmptyCollection()] [object[]]$Policies = @()
     )
 
     Write-Host "[..] Analyzing legacy authentication blocking..." -ForegroundColor DarkCyan
     $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-    $enabled = $Policies | Where-Object { $_.State -eq "enabled" }
+    $enabled = @($Policies) | Where-Object { $_.State -eq "enabled" }
 
-    $blockingPolicies = foreach ($p in $enabled) {
+    $blockingPolicies = foreach ($p in @($enabled)) {
         $d = Get-EntraCAPolicyDetails -Policy $p
-        $clientApps = $d.ClientAppTypes
-        $isBlock  = $d.BuiltInControls -contains "block"
-        $noAppsInclude = ($d.IncludeApplications -contains "All") -or ($d.IncludeApplications -contains "None")
+        $clientApps = @($d.ClientAppTypes)
+        $isBlock  = @($d.BuiltInControls) -contains "block"
+        $noAppsInclude = (@($d.IncludeApplications) -contains "All") -or (@($d.IncludeApplications) -contains "None")
         $coversLegacy = ($clientApps -contains "exchangeActiveSync") -or ($clientApps -contains "other")
         if ($isBlock -and $noAppsInclude -and $coversLegacy) { $p }
     }

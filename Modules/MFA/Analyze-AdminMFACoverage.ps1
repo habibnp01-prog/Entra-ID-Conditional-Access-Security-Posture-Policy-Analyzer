@@ -2,34 +2,29 @@ function Invoke-EntraCAAdminMFAAnalysis {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory)] [object[]]$Policies,
+        [AllowEmptyCollection()] [object[]]$Policies = @(),
         [string[]]$PrivilegedRoleIds
     )
 
     if (-not $PrivilegedRoleIds) { $PrivilegedRoleIds = Get-EntraCAPrivilegedRoleIds }
+    $PrivilegedRoleIds = @($PrivilegedRoleIds)
 
     Write-Host "[..] Analyzing privileged role MFA coverage..." -ForegroundColor DarkCyan
 
     $roleMap = Get-EntraCAPrivilegedRoleMap
-  $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
-    $mfaPolicies = $Policies | Get-EntraCAMFACoverage | Where-Object { $_.RequiresMfa -and $_.State -eq "enabled" }
+    $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
+
+    $mfaPolicies = @(@($Policies) | Get-EntraCAMFACoverage | Where-Object { $_.RequiresMfa -and $_.State -eq "enabled" })
 
     foreach ($roleId in $PrivilegedRoleIds) {
         $coveringPolicy = $mfaPolicies | Where-Object {
-            ($_.IncludeRoles -contains $roleId) -or
-            ($_.CoversAllUsers -and ($_.ExcludeRoles -notcontains $roleId))
+            (@($_.IncludeRoles) -contains $roleId) -or
+            ($_.CoversAllUsers -and (@($_.ExcludeRoles) -notcontains $roleId))
         } | Select-Object -First 1
 
         if (-not $coveringPolicy) {
-            $findings.Add([PSCustomObject]@{
-                FindingId   = "CA-003"
-                Severity    = "Critical"
-                PolicyId    = $null
-                PolicyName  = $null
-                SubjectId   = $roleId
-                SubjectType = "Role"
-                Details     = "Privileged role ""$($roleMap[$roleId])"" ($roleId) is not covered by any enabled MFA-requiring policy."
-            })
+            $roleName = if ($roleMap[$roleId]) { $roleMap[$roleId] } else { $roleId }
+            $findings.Add([PSCustomObject]@{ FindingId = "CA-003"; Severity = "Critical"; PolicyId = $null; PolicyName = $null; SubjectId = $roleId; SubjectType = "Role"; Details = "Privileged role ""$roleName"" ($roleId) is not covered by any enabled MFA-requiring policy." })
         }
     }
 

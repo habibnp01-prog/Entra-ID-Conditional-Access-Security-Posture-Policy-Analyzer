@@ -2,34 +2,25 @@ function Invoke-EntraCAExclusionAnalysis {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory)] [object[]]$Policies,
+        [AllowEmptyCollection()] [object[]]$Policies = @(),
         [int]$WideGroupThreshold = 20,
         [switch]$ResolveGroupMembers
     )
 
     Write-Host "[..] Analyzing policy exclusions..." -ForegroundColor DarkCyan
-
     $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
-    $allExclusions = $Policies | Find-EntraCAPolicyExclusions
+    $allExclusions = @(@($Policies) | Find-EntraCAPolicyExclusions)
 
     foreach ($ex in $allExclusions) {
         if ($ex.PolicyState -ne "enabled") { continue }
-        $findings.Add([PSCustomObject]@{
-            FindingId   = "CA-002"
-            Severity    = "Medium"
-            PolicyId    = $ex.PolicyId
-            PolicyName  = $ex.PolicyName
-            SubjectId   = $ex.ExcludeId
-            SubjectType = $ex.ExcludeType
-            Details     = "Policy excludes $($ex.ExcludeType) $($ex.ExcludeId)."
-        })
+        $findings.Add([PSCustomObject]@{ FindingId = "CA-002"; Severity = "Medium"; PolicyId = $ex.PolicyId; PolicyName = $ex.PolicyName; SubjectId = $ex.ExcludeId; SubjectType = $ex.ExcludeType; Details = "Policy excludes $($ex.ExcludeType) $($ex.ExcludeId)." })
     }
 
     if ($ResolveGroupMembers) {
-        $groupIds = $allExclusions | Where-Object { $_.ExcludeType -eq "Group" } | Select-Object -ExpandProperty ExcludeId -Unique
-        if ($groupIds) {
+        $groupIds = @($allExclusions | Where-Object { $_.ExcludeType -eq "Group" } | Select-Object -ExpandProperty ExcludeId -Unique)
+        if ($groupIds.Count -gt 0) {
             $groups = Get-EntraCAGroups -GroupIds $groupIds
-            foreach ($g in $groups) {
+            foreach ($g in @($groups)) {
                 $groupMembers = Invoke-EntraCAWithRetry -ScriptBlock { Get-MgGroupMember -GroupId $g.Id -All -ErrorAction Stop }
                 $memberCount = @($groupMembers).Count
                 if ($memberCount -gt $WideGroupThreshold) {
