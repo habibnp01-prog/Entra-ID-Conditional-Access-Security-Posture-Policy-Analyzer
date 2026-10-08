@@ -21,8 +21,8 @@ Describe "Phase 1 - Foundation" {
     It "Write-EntraCAAssessmentLog writes without error" {
         { Write-EntraCAAssessmentLog -Message "test" -Level Info } | Should -Not -Throw
     }
-    It "Connect-EntraCAGraph throws NotImplemented" {
-        { Connect-EntraCAGraph -TenantId "x" -ClientId "y" -CertificateThumbprint "z" } | Should -Throw "*NotImplemented*"
+    It "Connect-EntraCAGraph rejects unknown certificate thumbprint" {
+        { Connect-EntraCAGraph -TenantId "x" -ClientId "y" -CertificateThumbprint "0000000000000000000000000000000000000000" } | Should -Throw "*missing*"
     }
     It "Test-EntraCARequiredModules reports Missing for fake module" {
         $r = Test-EntraCARequiredModules -RequiredModules @(@{ Name="NoSuchModule999"; MinimumVersion="1.0.0" })
