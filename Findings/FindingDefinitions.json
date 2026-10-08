@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0",
+  "findings": [
+    {
+      "id": "CA-001",
+      "name": "Enabled policy with no assigned users or groups",
+      "severity": "High",
+      "category": "Configuration",
+      "description": "An enabled Conditional Access policy applies to no users or groups, making it ineffective.",
+      "remediation": "Assign the policy to the intended user or group scope, or disable/delete it if obsolete.",
+      "references": ["https://learn.microsoft.com/entra/identity/conditional-access/"]
+    },
+    {
+      "id": "CA-002",
+      "name": "Excluded groups in Conditional Access policy",
+      "severity": "Medium",
+      "category": "Exclusions",
+      "description": "The policy excludes one or more groups. Exclusions are a common source of security gaps if not documented and reviewed regularly.",
+      "remediation": "Verify the exclusion is still required. Document the business justification. Review quarterly.",
+      "references": []
+    },
+    {
+      "id": "CA-003",
+      "name": "Privileged roles not covered by MFA-requiring policy",
+      "severity": "Critical",
+      "category": "MFA",
+      "description": "One or more privileged directory roles are NOT covered by a Conditional Access policy requiring MFA.",
+      "remediation": "Create or update a Conditional Access policy requiring MFA for all privileged directory roles.",
+      "references": ["https://learn.microsoft.com/entra/identity/conditional-access/howto-conditional-access-policy-admin-mfa"]
+    },
+    {
+      "id": "CA-004",
+      "name": "Break-glass account not properly excluded",
+      "severity": "High",
+      "category": "Exclusions",
+      "description": "No break-glass account was detected in the exclusion list of MFA-requiring policies.",
+      "remediation": "Designate 1-2 cloud-only break-glass accounts, exclude them from all Conditional Access policies, and monitor their sign-in activity closely.",
+      "references": ["https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access"]
+    },
+    {
+      "id": "CA-005",
+      "name": "Wide exclusion group (more than 20 members)",
+      "severity": "Medium",
+      "category": "Exclusions",
+      "description": "A group with more than 20 members is excluded from a Conditional Access policy.",
+      "remediation": "Review group membership. Tighten to only the users who genuinely need the exclusion.",
+      "references": []
+    }
+  ]
+}
