@@ -10,7 +10,8 @@ function Invoke-EntraCAAdminMFAAnalysis {
 
     Write-Host "[..] Analyzing privileged role MFA coverage..." -ForegroundColor DarkCyan
 
-    $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
+    $roleMap = Get-EntraCAPrivilegedRoleMap
+  $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
     $mfaPolicies = $Policies | Get-EntraCAMFACoverage | Where-Object { $_.RequiresMfa -and $_.State -eq "enabled" }
 
     foreach ($roleId in $PrivilegedRoleIds) {
@@ -27,7 +28,7 @@ function Invoke-EntraCAAdminMFAAnalysis {
                 PolicyName  = $null
                 SubjectId   = $roleId
                 SubjectType = "Role"
-                Details     = "Privileged role $roleId is not covered by any enabled MFA-requiring policy."
+                Details     = "Privileged role ""$($roleMap[$roleId])"" ($roleId) is not covered by any enabled MFA-requiring policy."
             })
         }
     }
