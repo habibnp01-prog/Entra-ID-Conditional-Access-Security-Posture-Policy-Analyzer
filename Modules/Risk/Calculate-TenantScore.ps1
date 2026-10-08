@@ -9,7 +9,7 @@ function Calculate-EntraCATenantScore {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory)] [object[]]$Findings,
+        [AllowEmptyCollection()] [object[]]$Findings = @(),
         [string]$RiskModelPath
     )
 
@@ -18,31 +18,35 @@ function Calculate-EntraCATenantScore {
     }
     $model = Get-Content $RiskModelPath -Raw | ConvertFrom-Json
 
-    $maxPerFinding = 3
-    $weights = $model.severityLevels
+    # Per-severity penalty (points deducted from 100 per unique finding ID)
+    # These are NOT capped by count — repeated findings of the same ID only count once.
+    $severityPenalty = @{
+        Critical = 30
+        High     = 15
+        Medium   = 7
+        Low      = 2
+        Info     = 0
+    }
 
-    $groups = $Findings | Group-Object FindingId
+    $groups = @($Findings | Group-Object FindingId)
 
     $penalty = 0
     $breakdown = foreach ($g in $groups) {
         $sev = ($g.Group | Select-Object -First 1).Severity
-        $weight = if ($weights.$sev) { $weights.$sev.weight } else { 4 }
-        $capped = [Math]::Min($g.Count, $maxPerFinding)
-        $contribution = $weight * $capped
-        $penalty += $contribution
+        $points = if ($severityPenalty.ContainsKey($sev)) { $severityPenalty[$sev] } else { 5 }
+        # Cap 30 max per finding ID (i.e. Critical max)
+        $capped = [Math]::Min($points, 30)
+        $penalty += $capped
 
         [PSCustomObject]@{
             FindingId    = $g.Name
             Severity     = $sev
             RawCount     = $g.Count
-            CappedCount  = $capped
-            Weight       = $weight
-            Contribution = $contribution
+            Penalty      = $capped
         }
     }
 
-    $maxPenalty = 10 * 10 * $maxPerFinding
-    $score = [Math]::Round([Math]::Max(0, 100 - ($penalty / $maxPenalty) * 100), 1)
+    $score = [Math]::Round([Math]::Max(0, 100 - $penalty), 1)
 
     $band = "Critical"
     foreach ($b in $model.tenantScoreBands.PSObject.Properties) {
@@ -53,12 +57,11 @@ function Calculate-EntraCATenantScore {
         Score      = $score
         Band       = $band
         Penalty    = $penalty
-        MaxPenalty = $maxPenalty
         Findings   = $Findings.Count
-        Critical   = ($Findings | Where-Object { $_.Severity -eq "Critical" }).Count
-        High       = ($Findings | Where-Object { $_.Severity -eq "High" }).Count
-        Medium     = ($Findings | Where-Object { $_.Severity -eq "Medium" }).Count
-        Low        = ($Findings | Where-Object { $_.Severity -eq "Low" }).Count
+        Critical   = @($Findings | Where-Object { $_.Severity -eq "Critical" }).Count
+        High       = @($Findings | Where-Object { $_.Severity -eq "High" }).Count
+        Medium     = @($Findings | Where-Object { $_.Severity -eq "Medium" }).Count
+        Low        = @($Findings | Where-Object { $_.Severity -eq "Low" }).Count
         Breakdown  = @($breakdown)
     }
 }
