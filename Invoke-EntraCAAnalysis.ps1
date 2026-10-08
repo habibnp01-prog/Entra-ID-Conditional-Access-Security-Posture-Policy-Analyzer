@@ -18,7 +18,7 @@ param(
     [switch]$Quiet
 )
 
-Set-StrictMode -Version Latest
+# Set-StrictMode disabled for compatibility
 $ErrorActionPreference = "Stop"
 
 function Write-Banner {
@@ -92,7 +92,7 @@ function Invoke-Remediation {
     if ($SkipRemediation) { return $null }
     Write-Host "[7/8] Building remediation plan..." -ForegroundColor Cyan
     $plan = Get-EntraCARemediationPlan -Findings $Findings
-    if (-not $Quiet) { Show-EntraCARemediationPlan -Plan $plan }
+    $plan = @($plan); if (-not $Quiet) { Show-EntraCARemediationPlan -Plan $plan }
     $dir = Join-Path $OutputDirectory "Remediation"
     [PSCustomObject]@{
         Plan      = $plan
