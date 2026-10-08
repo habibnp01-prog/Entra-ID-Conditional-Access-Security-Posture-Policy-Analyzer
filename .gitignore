@@ -1,0 +1,9 @@
+Reports/**
+Logs/**
+!Reports/**/.gitkeep
+!Logs/**/.gitkeep
+*.cer
+*.pfx
+*.pem
+.vscode/
+_bootstrap.ps1

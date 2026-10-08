@@ -1,0 +1,1 @@
+function Connect-EntraCAGraph{[CmdletBinding()]param([string]$TenantId,[string]$ClientId,[string]$CertificateThumbprint);throw "NotImplemented: Phase 2"} function Test-EntraCAGraphConnection{return $false}
