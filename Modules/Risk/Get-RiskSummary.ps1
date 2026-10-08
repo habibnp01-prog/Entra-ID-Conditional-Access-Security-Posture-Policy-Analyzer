@@ -1,6 +1,6 @@
 function Get-EntraCARiskSummary {
     [CmdletBinding()]
-    param([Parameter(Mandatory)] [object[]]$Findings)
+    param([Parameter(Mandatory)] [AllowEmptyCollection()] [object[]]$Findings)
     $score = Calculate-EntraCATenantScore -Findings $Findings
 
     Write-Host "`n=== Tenant Risk Score ===" -ForegroundColor Cyan
@@ -13,7 +13,8 @@ function Get-EntraCARiskSummary {
     Write-Host "  Low        : $($score.Low)" -ForegroundColor Green
 
     Write-Host "`n--- Per-Finding Breakdown ---" -ForegroundColor Cyan
-    $score.Breakdown | Format-Table -AutoSize
+    # Write-Host forces display even when the function output is captured
+    ($score.Breakdown | Format-Table -AutoSize | Out-String).Trim() | Write-Host
 
     return $score
 }
