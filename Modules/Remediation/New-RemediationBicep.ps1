@@ -2,10 +2,11 @@ function New-EntraCARemediationBicep {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory)] [object[]]$RemediationPlan,
+        [AllowEmptyCollection()] [object[]]$RemediationPlan = @(),
         [string]$OutputPath
     )
 
+    $RemediationPlan = @($RemediationPlan)
     if (-not $OutputPath) {
         $OutputPath = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "Reports/Remediation"
     }
@@ -15,10 +16,9 @@ function New-EntraCARemediationBicep {
     $file = Join-Path $OutputPath "baseline-policies-$timestamp.json"
 
     Write-Host "[..] Generating baseline policy templates..." -ForegroundColor DarkCyan
-
     $templates = @()
 
-    $hasIds = $RemediationPlan | Select-Object -ExpandProperty FindingId
+    $hasIds = @($RemediationPlan | Select-Object -ExpandProperty FindingId)
 
     if ($hasIds -contains "CA-003") {
         $templates += [PSCustomObject]@{
@@ -72,6 +72,6 @@ function New-EntraCARemediationBicep {
 
     $templates | ConvertTo-Json -Depth 15 | Set-Content -Path $file -Encoding UTF8
     Write-Host "[OK] Generated $($templates.Count) baseline policy template(s): $file" -ForegroundColor Green
-    Write-Host "     Policies are in REPORT-ONLY mode — safe to import." -ForegroundColor Yellow
+    Write-Host "     Policies are in REPORT-ONLY mode - safe to import." -ForegroundColor Yellow
     return $file
 }

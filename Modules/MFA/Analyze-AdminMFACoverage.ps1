@@ -10,9 +10,8 @@ function Invoke-EntraCAAdminMFAAnalysis {
     $PrivilegedRoleIds = @($PrivilegedRoleIds)
 
     Write-Host "[..] Analyzing privileged role MFA coverage..." -ForegroundColor DarkCyan
-
     $roleMap = Get-EntraCAPrivilegedRoleMap
-    $findings = [System.Collections.Generic.List[PSCustomObject]]::new()
+    $out = @()
 
     $mfaPolicies = @(@($Policies) | Get-EntraCAMFACoverage | Where-Object { $_.RequiresMfa -and $_.State -eq "enabled" })
 
@@ -24,10 +23,10 @@ function Invoke-EntraCAAdminMFAAnalysis {
 
         if (-not $coveringPolicy) {
             $roleName = if ($roleMap[$roleId]) { $roleMap[$roleId] } else { $roleId }
-            $findings.Add([PSCustomObject]@{ FindingId = "CA-003"; Severity = "Critical"; PolicyId = $null; PolicyName = $null; SubjectId = $roleId; SubjectType = "Role"; Details = "Privileged role ""$roleName"" ($roleId) is not covered by any enabled MFA-requiring policy." })
+            $out += [PSCustomObject]@{ FindingId = "CA-003"; Severity = "Critical"; PolicyId = $null; PolicyName = $null; SubjectId = $roleId; SubjectType = "Role"; Details = "Privileged role ""$roleName"" ($roleId) is not covered by any enabled MFA-requiring policy." }
         }
     }
 
-    Write-Host "[OK] Admin MFA analysis complete: $($findings.Count) finding(s)." -ForegroundColor Green
-    return $findings
+    Write-Host "[OK] Admin MFA analysis complete: $($out.Count) finding(s)." -ForegroundColor Green
+    return ,$out
 }

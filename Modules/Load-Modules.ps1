@@ -1,1 +1,17 @@
-$modulesRoot=$PSScriptRoot;$files=Get-ChildItem -Path $modulesRoot -Filter "*.ps1" -Recurse|Where-Object{$_.Name -ne "Load-Modules.ps1" -and $_.DirectoryName -notlike "*\Bootstrap" -and $_.DirectoryName -notlike "*/Bootstrap"}|Sort-Object FullName;foreach($f in $files){try{. $f.FullName}catch{Write-Host "[WARN] Failed to load $($f.Name): $_" -ForegroundColor Yellow}};Write-Host "[OK] Loaded $($files.Count) module files." -ForegroundColor Green
+# Modules/Load-Modules.ps1
+# Dot-source all .ps1 files in Modules/ (excluding Bootstrap)
+
+$modulesRoot = $PSScriptRoot
+$files = Get-ChildItem -Path $modulesRoot -Filter "*.ps1" -Recurse |
+         Where-Object {
+             $_.Name -ne "Load-Modules.ps1" -and
+             $_.DirectoryName -notlike "*\Bootstrap" -and
+             $_.DirectoryName -notlike "*/Bootstrap"
+         } | Sort-Object FullName
+
+foreach ($f in $files) {
+    try { . $f.FullName }
+    catch { Write-Host "[WARN] Failed to load $($f.Name): $_" -ForegroundColor Yellow }
+}
+
+Write-Host "[OK] Loaded $($files.Count) module files." -ForegroundColor Green

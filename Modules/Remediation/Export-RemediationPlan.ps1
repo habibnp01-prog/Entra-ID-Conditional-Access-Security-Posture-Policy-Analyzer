@@ -2,10 +2,11 @@ function Export-EntraCARemediationPlan {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory)] [object[]]$Plan,
+        [AllowEmptyCollection()] [object[]]$Plan = @(),
         [string]$OutputPath
     )
 
+    $Plan = @($Plan)
     if (-not $OutputPath) {
         $OutputPath = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "Reports/Remediation"
     }
@@ -21,7 +22,7 @@ function Export-EntraCARemediationPlan {
 
     $i = 1
     foreach ($item in $Plan) {
-        $md += "## $i. [$($item.Severity)] $($item.FindingId) — $($item.Name)`n`n"
+        $md += "## $i. [$($item.Severity)] $($item.FindingId) - $($item.Name)`n`n"
         $md += "**Occurrences:** $($item.Occurrences)`n`n"
         $md += "**Description:** $($item.Description)`n`n"
         $md += "**Remediation:** $($item.Remediation)`n`n"

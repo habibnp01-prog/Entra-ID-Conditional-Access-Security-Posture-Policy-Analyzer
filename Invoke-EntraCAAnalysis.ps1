@@ -92,7 +92,7 @@ function Invoke-Remediation {
     if ($SkipRemediation) { return $null }
     Write-Host "[7/8] Building remediation plan..." -ForegroundColor Cyan
     $plan = Get-EntraCARemediationPlan -Findings $Findings
-    if (-not $Quiet) { $plan | Show-EntraCARemediationPlan }
+    if (-not $Quiet) { Show-EntraCARemediationPlan -Plan $plan }
     $dir = Join-Path $OutputDirectory "Remediation"
     [PSCustomObject]@{
         Plan      = $plan
