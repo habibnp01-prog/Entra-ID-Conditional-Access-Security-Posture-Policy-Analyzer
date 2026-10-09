@@ -1,0 +1,70 @@
+name: Scheduled Entra CA Scan
+
+on:
+  schedule:
+    # Runs daily at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PowerShell modules
+        shell: pwsh
+        run: |
+          Install-Module Pester -MinimumVersion 5.0 -Force -SkipPublisherCheck -Scope CurrentUser
+          Install-Module Microsoft.Graph -MinimumVersion 2.0 -Force -Scope CurrentUser -AllowClobber
+
+      - name: Restore certificate from secret
+        shell: pwsh
+        env:
+          CERT_BASE64: ${{ secrets.ENTRA_CA_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.ENTRA_CA_CERT_PASSWORD }}
+        run: |
+          if (-not $env:CERT_BASE64) { Write-Host "No cert secret; aborting."; exit 1 }
+          $bytes = [Convert]::FromBase64String($env:CERT_BASE64)
+          $pfx = "$env:TEMP\EntraCA.pfx"
+          [IO.File]::WriteAllBytes($pfx, $bytes)
+          $secure = ConvertTo-SecureString $env:CERT_PASSWORD -AsPlainText -Force
+          Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $secure | Out-Null
+          Remove-Item $pfx -Force
+
+      - name: Run Entra CA scan
+        shell: pwsh
+        env:
+          ENTRA_CA_TENANT: ${{ secrets.ENTRA_CA_TENANT_ID }}
+          ENTRA_CA_CLIENT: ${{ secrets.ENTRA_CA_CLIENT_ID }}
+        run: |
+          # Rebuild config from secrets
+          $cfg = Get-Content ".\Config\AnalyzerConfig.template.json" -Raw | ConvertFrom-Json
+          $cfg.tenant.tenantId = $env:ENTRA_CA_TENANT
+          $cfg.tenant.clientId = $env:ENTRA_CA_CLIENT
+          $cert = Get-ChildItem Cert:\CurrentUser\My | Sort-Object NotAfter -Descending | Select-Object -First 1
+          $cfg.tenant.certificateThumbprint = $cert.Thumbprint
+          $cfg | ConvertTo-Json -Depth 10 | Set-Content ".\Config\AnalyzerConfig.json" -Encoding UTF8
+
+          .\Invoke-EntraCAAnalysis.ps1 -Quiet
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: entra-ca-reports
+          path: |
+            Reports/CSV/
+            Reports/JSON/
+            Reports/HTML/
+            Reports/Remediation/
+          retention-days: 30
+
+      - name: Fail if score dropped below threshold
+        shell: pwsh
+        run: |
+          $latest = Get-ChildItem Reports/JSON/report-*.json | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $score = (Get-Content $latest.FullName -Raw | ConvertFrom-Json).Summary.Score
+          Write-Host "Score: $score"
+          if ($score -lt 40) { Write-Host "::error::Tenant score below 40 (Critical)"; exit 1 }

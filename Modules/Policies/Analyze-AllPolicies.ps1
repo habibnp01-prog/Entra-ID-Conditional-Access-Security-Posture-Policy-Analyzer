@@ -23,6 +23,9 @@ function Invoke-EntraCAFullAnalysis {
     $all += Find-EntraCAPolicyConflicts              -Policies $Policies
     $all += Invoke-EntraCAAuthStrengthAnalysis       -Policies $Policies
     $all += Invoke-EntraCALocationAnalysis           -Policies $Policies
+    $all += Invoke-EntraCASessionAnalysis            -Policies $Policies
+    $all += Invoke-EntraCADeviceAnalysis             -Policies $Policies
+    $all += Invoke-EntraCAGuestAnalysis              -Policies $Policies
 
     $all = @($all)
     Write-Host "`n[OK] Full analysis complete: $($all.Count) total finding(s)." -ForegroundColor Green

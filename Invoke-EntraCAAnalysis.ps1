@@ -134,6 +134,8 @@ try {
     Resolve-Authentication -Config $config
     $findings    = Invoke-Analysis
     Write-Host "[6b/8] Calculating risk score..." -ForegroundColor Cyan
+    $findings    = Apply-EntraCAExceptions -Findings $findings
+    $findings    = Apply-EntraCAExceptions -Findings $findings
     $summary     = Calculate-EntraCATenantScore -Findings $findings
     $artifacts   = Invoke-Reporting -Findings $findings -Summary $summary
     $remediation = Invoke-Remediation -Findings $findings

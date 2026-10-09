@@ -1,1 +1,19 @@
-{"exceptions":[]}
+{
+  "exceptions": [
+    {
+      "findingId": "CA-003",
+      "policyName": null,
+      "subjectId": "62e90394-69f5-4237-9190-012177145e10",
+      "reason": "Break-glass account - documented per SOC2 emergency access policy",
+      "expiresOn": "2027-12-31",
+      "approvedBy": "security@yourcompany.com"
+    },
+    {
+      "findingId": "CA-010",
+      "policyName": "Legacy - Block non-corp locations",
+      "reason": "Pending migration Q2 2027",
+      "expiresOn": "2027-06-30",
+      "approvedBy": "ciso@yourcompany.com"
+    }
+  ]
+}
